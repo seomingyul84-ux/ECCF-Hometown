@@ -1,30 +1,19 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
 import { getDatabase, ref, push, onValue, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
 
-// ⚠️ 본인의 Firebase 설정값으로 반드시 교체하세요!
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+// 1. Firebase 설정 (방금 복사하신 본인 키를 여기에 넣으세요)
 const firebaseConfig = {
-  apiKey: "AIzaSyDBxVUD8yJKxmt7I1p4eQgUeLeEMvYv-yo",
-  authDomain: "eccf-ee0be.firebaseapp.com",
-  databaseURL: "https://eccf-ee0be-default-rtdb.firebaseio.com",
-  projectId: "eccf-ee0be",
-  storageBucket: "eccf-ee0be.firebasestorage.app",
-  messagingSenderId: "482426382572",
-  appId: "1:482426382572:web:b39163083aff44416e5dc9",
-  measurementId: "G-J9DXR8XK4C"
+    apiKey: "AIzaSyDBxVUD8yJKxmt7I1p4eQgUeLeEMvYv-yo",
+    authDomain: "eccf-ee0be.firebaseapp.com",
+    databaseURL: "https://eccf-ee0be-default-rtdb.firebaseio.com",
+    projectId: "eccf-ee0be",
+    storageBucket: "eccf-ee0be.appspot.com",
+    messagingSenderId: "482426382572",
+    appId: "1:482426382572:web:b39163083aff44416e5dc9",
+    measurementId: "G-J9DXR8XK4C"
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-
+// 중복 선언 방지를 위해 이미 앱이 있는지 확인 후 초기화
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
@@ -38,6 +27,7 @@ const MEMBERS = {
 
 let me = null;
 
+// window.을 붙여야 HTML의 onclick에서 인식합니다!
 window.handleLogin = () => {
     const name = document.getElementById('username').value;
     const pw = document.getElementById('password').value;
@@ -55,7 +45,7 @@ window.handleLogin = () => {
 
 window.handleSend = () => {
     const input = document.getElementById('msg-input');
-    if (!input.value.trim()) return;
+    if (!input || !input.value.trim()) return;
 
     push(ref(db, 'chat_logs'), {
         name: me.name,
@@ -73,11 +63,7 @@ function listenMessages() {
         snap.forEach((child) => {
             const data = child.val();
             const div = document.createElement('div');
-            
-            // 본인, OWNER, 일반 유저 스타일에 따라 클래스 부여
-            let typeClass = 'msg-user';
-            if (data.name === me.name) typeClass = 'msg-me';
-            else if (data.role === 'OWNER') typeClass = 'msg-owner';
+            let typeClass = (data.name === me.name) ? 'msg-me' : (data.role === 'OWNER' ? 'msg-owner' : 'msg-user');
 
             div.innerHTML = `
                 <div class="sender-name">${data.name}</div>
