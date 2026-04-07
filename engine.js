@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-import { getDatabase, ref, push, onValue, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
+import { getDatabase, ref, push, onValue, serverTimestamp, query, limitToLast } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyDBxVUD8yJKxmt7I1p4eQgUeLeEMvYv-yo",
@@ -24,6 +24,7 @@ const MEMBERS = {
 };
 
 let me = null;
+let isFirstLoad = true; // 처음 접속 시 기존 메시지들에 대해 알림이 폭주하는 것 방지
 
 // 로그인 함수
 window.handleLogin = () => {
@@ -37,7 +38,13 @@ window.handleLogin = () => {
     if (MEMBERS[name] && MEMBERS[name].pw === pw) {
         me = { name, ...MEMBERS[name] };
         
-        // 에러 방지를 위한 안전한 UI 전환
+        // 알림 권한 요청 (백그라운드 알림의 핵심)
+        if ("Notification" in window) {
+            Notification.requestPermission().then(permission => {
+                if (permission === "granted") console.log("알림 권한 허용됨");
+            });
+        }
+
         const loginBox = document.getElementById('login-box');
         const chatBox = document.getElementById('chat-box');
         const userInfo = document.getElementById('user-info');
@@ -66,32 +73,50 @@ window.handleSend = () => {
     input.value = '';
 };
 
+// 브라우저 알림 실행 함수
+function triggerPushNotification(senderName, messageText) {
+    // 내가 보낸 메시지거나 페이지가 완전히 활성화된 상태면 알림을 띄우지 않음 (선택 사항)
+    if (senderName === me.name) return;
+
+    if (Notification.permission === "granted") {
+        const notification = new Notification(`ECCF 새 메시지: ${senderName}`, {
+            body: messageText,
+            icon: 'https://cdn-icons-png.flaticon.com/512/5968/5968756.png' // 채팅 아이콘 예시
+        });
+
+        notification.onclick = () => {
+            window.focus();
+            notification.close();
+        };
+    }
+}
+
 // 메시지 실시간 수신 및 UI 출력
 function listenMessages() {
     const container = document.getElementById('messages');
     if (!container) return;
 
-    onValue(ref(db, 'chat_logs'), (snap) => {
-        container.innerHTML = '';
+    const chatRef = ref(db, 'chat_logs');
+    
+    onValue(chatRef, (snap) => {
+        const dataList = [];
         snap.forEach((child) => {
-            const data = child.val();
+            dataList.push(child.val());
+        });
+
+        // UI 렌더링
+        container.innerHTML = '';
+        dataList.forEach((data) => {
             const div = document.createElement('div');
-            
-            // 레이아웃 설정
             div.style.display = "flex";
             div.style.flexDirection = "column";
-            div.style.marginBottom = "15px"; // 메시지 간 간격 넓힘
+            div.style.marginBottom = "15px";
             
-            // 작성자 구분에 따른 정렬 및 스타일
             const isMe = (data.name === me.name);
             const isOwner = (data.role === 'OWNER');
-            
-            let typeClass = 'msg-user';
-            if (isMe) typeClass = 'msg-me';
-            else if (isOwner) typeClass = 'msg-owner';
-
-            // 정렬 방향 결정
             const align = isMe ? 'flex-end' : 'flex-start';
+
+            let typeClass = isMe ? 'msg-me' : (isOwner ? 'msg-owner' : 'msg-user');
 
             div.innerHTML = `
                 <div style="font-size: 12px; color: #6b7280; margin: 0 8px 4px 8px; align-self: ${align}">
@@ -103,8 +128,17 @@ function listenMessages() {
             `;
             container.appendChild(div);
         });
+
+        // 새 메시지 알림 로직
+        if (!isFirstLoad && dataList.length > 0) {
+            const lastMsg = dataList[dataList.length - 1];
+            // 브라우저 탭이 백그라운드에 있거나 최소화되었을 때 알림 트리거
+            if (document.hidden) {
+                triggerPushNotification(lastMsg.name, lastMsg.text);
+            }
+        }
         
-        // 부드럽게 아래로 스크롤
+        isFirstLoad = false; // 첫 로딩 이후부터 알림 활성화
         container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
     });
 }
