@@ -16,11 +16,11 @@
             height: 100vh; 
         }
 
-        /* 메인 컨테이너 */
+        /* 메인 컨테이너 (16:9 비율 유지) */
         #app { 
             width: 95%; 
-            max-width: 800px; /* 16:9 비율을 위해 가로폭 확장 */
-            height: 450px;    /* 고정 높이로 안정감 부여 */
+            max-width: 800px; 
+            height: 450px;    
             background: white; 
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1); 
             border-radius: 12px; 
@@ -52,7 +52,7 @@
             gap: 15px; 
         }
         
-        h1 { font-size: 24px; margin-bottom: 10px; }
+        h1 { font-size: 24px; margin-bottom: 10px; line-height: 1.2; }
         p { font-size: 14px; opacity: 0.8; }
 
         input { 
@@ -61,8 +61,11 @@
             border: 1px solid #e5e7eb; 
             border-radius: 8px; 
             font-size: 15px;
-            outline-color: #2563eb;
+            outline: none;
+            border: 1px solid #ddd;
         }
+        input:focus { border-color: #2563eb; }
+
         button { 
             padding: 12px; 
             background: #2563eb; 
@@ -99,7 +102,9 @@
             flex-direction: column; 
             gap: 12px; 
         }
-        .msg-unit { padding: 10px 14px; border-radius: 18px; max-width: 70%; font-size: 14px; }
+        
+        /* 메시지 디자인 스타일 */
+        .msg-unit { padding: 10px 14px; border-radius: 18px; max-width: 70%; font-size: 14px; line-height: 1.4; }
         .msg-user { background: white; border: 1px solid #e5e7eb; align-self: flex-start; }
         .msg-owner { background: #fee2e2; border: 1px solid #fecaca; color: #b91c1c; align-self: flex-start; font-weight: 600; }
         .msg-me { background: #2563eb; color: white; align-self: flex-end; }
