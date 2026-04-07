@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
 import { getDatabase, ref, push, onValue, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
 
-// 1. Firebase 설정 (방금 복사하신 본인 키를 여기에 넣으세요)
+// 1. Firebase 설정
 const firebaseConfig = {
     apiKey: "AIzaSyDBxVUD8yJKxmt7I1p4eQgUeLeEMvYv-yo",
     authDomain: "eccf-ee0be.firebaseapp.com",
@@ -13,7 +13,7 @@ const firebaseConfig = {
     measurementId: "G-J9DXR8XK4C"
 };
 
-// 중복 선언 방지를 위해 이미 앱이 있는지 확인 후 초기화
+// 초기화
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
@@ -27,7 +27,7 @@ const MEMBERS = {
 
 let me = null;
 
-// window.을 붙여야 HTML의 onclick에서 인식합니다!
+// 2. 로그인 함수 (window 객체에 등록해야 HTML에서 호출 가능)
 window.handleLogin = () => {
     const name = document.getElementById('username').value;
     const pw = document.getElementById('password').value;
@@ -43,6 +43,7 @@ window.handleLogin = () => {
     }
 };
 
+// 3. 메시지 전송 함수
 window.handleSend = () => {
     const input = document.getElementById('msg-input');
     if (!input || !input.value.trim()) return;
@@ -56,6 +57,7 @@ window.handleSend = () => {
     input.value = '';
 };
 
+// 4. 메시지 수신 로직
 function listenMessages() {
     const container = document.getElementById('messages');
     onValue(ref(db, 'chat_logs'), (snap) => {
@@ -63,11 +65,15 @@ function listenMessages() {
         snap.forEach((child) => {
             const data = child.val();
             const div = document.createElement('div');
-            let typeClass = (data.name === me.name) ? 'msg-me' : (data.role === 'OWNER' ? 'msg-owner' : 'msg-user');
+            
+            let typeClass = 'msg-user';
+            if (data.name === me.name) typeClass = 'msg-me';
+            else if (data.role === 'OWNER') typeClass = 'msg-owner';
 
+            div.style.marginBottom = "10px";
             div.innerHTML = `
-                <div class="sender-name">${data.name}</div>
-                <div class="msg-unit ${typeClass}">${data.text}</div>
+                <div style="font-size: 11px; color: #666;">${data.name}</div>
+                <div class="msg-unit ${typeClass}" style="display:inline-block; padding:8px; border-radius:10px;">${data.text}</div>
             `;
             container.appendChild(div);
         });
