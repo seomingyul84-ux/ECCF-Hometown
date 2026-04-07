@@ -1,22 +1,34 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
 import { getDatabase, ref, push, onValue, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
 
-// 1. Firebase 설정 (Firebase 콘솔에서 받은 본인의 키로 교체하세요)
+// ⚠️ 본인의 Firebase 설정값으로 반드시 교체하세요!
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
-    authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
-    databaseURL: "https://YOUR_PROJECT_ID-default-rtdb.firebaseio.com",
-    projectId: "YOUR_PROJECT_ID",
-    storageBucket: "YOUR_PROJECT_ID.appspot.com",
-    messagingSenderId: "YOUR_SENDER_ID",
-    appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyDBxVUD8yJKxmt7I1p4eQgUeLeEMvYv-yo",
+  authDomain: "eccf-ee0be.firebaseapp.com",
+  databaseURL: "https://eccf-ee0be-default-rtdb.firebaseio.com",
+  projectId: "eccf-ee0be",
+  storageBucket: "eccf-ee0be.firebasestorage.app",
+  messagingSenderId: "482426382572",
+  appId: "1:482426382572:web:b39163083aff44416e5dc9",
+  measurementId: "G-J9DXR8XK4C"
 };
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// 2. 회원 데이터
-const MEMBER_LIST = {
+const MEMBERS = {
     "서민규": { pw: "35687482", role: "OWNER" },
     "김진성": { pw: "44154323", role: "USER" },
     "송호연": { pw: "83546291", role: "USER" },
@@ -24,52 +36,55 @@ const MEMBER_LIST = {
     "김준우": { pw: "91216332", role: "USER" }
 };
 
-let currentUser = null;
+let me = null;
 
-// 3. 로그인 함수
-window.login = function() {
-    const id = document.getElementById('username').value;
+window.handleLogin = () => {
+    const name = document.getElementById('username').value;
     const pw = document.getElementById('password').value;
 
-    if (MEMBER_LIST[id] && MEMBER_LIST[id].pw === pw) {
-        currentUser = { id, ...MEMBER_LIST[id] };
-        document.getElementById('login-container').style.display = 'none';
-        document.getElementById('chat-container').style.display = 'flex';
-        document.getElementById('user-info').innerText = `${id} (${currentUser.role})`;
-        loadMessages();
+    if (MEMBERS[name] && MEMBERS[name].pw === pw) {
+        me = { name, ...MEMBERS[name] };
+        document.getElementById('login-box').style.display = 'none';
+        document.getElementById('chat-box').style.display = 'flex';
+        document.getElementById('header-title').innerText = `접속중: ${name} (${me.role})`;
+        listenMessages();
     } else {
-        alert("아이디 또는 비밀번호가 틀렸습니다.");
+        alert("정보가 올바르지 않습니다.");
     }
 };
 
-// 4. 메시지 전송
-window.send = function() {
+window.handleSend = () => {
     const input = document.getElementById('msg-input');
-    if (!input.value.trim() || !currentUser) return;
+    if (!input.value.trim()) return;
 
-    push(ref(db, 'messages'), {
-        sender: currentUser.id,
-        role: currentUser.role,
+    push(ref(db, 'chat_logs'), {
+        name: me.name,
+        role: me.role,
         text: input.value,
-        timestamp: serverTimestamp()
+        time: serverTimestamp()
     });
     input.value = '';
 };
 
-// 5. 메시지 실시간 수신
-function loadMessages() {
-    const msgDiv = document.getElementById('messages');
-    onValue(ref(db, 'messages'), (snapshot) => {
-        msgDiv.innerHTML = ''; // 초기화
-        snapshot.forEach((child) => {
+function listenMessages() {
+    const container = document.getElementById('messages');
+    onValue(ref(db, 'chat_logs'), (snap) => {
+        container.innerHTML = '';
+        snap.forEach((child) => {
             const data = child.val();
-            const item = document.createElement('div');
-            item.className = 'msg';
-            if (data.role === 'OWNER') item.classList.add('owner');
+            const div = document.createElement('div');
             
-            item.innerText = `${data.sender}: ${data.text}`;
-            msgDiv.appendChild(item);
+            // 본인, OWNER, 일반 유저 스타일에 따라 클래스 부여
+            let typeClass = 'msg-user';
+            if (data.name === me.name) typeClass = 'msg-me';
+            else if (data.role === 'OWNER') typeClass = 'msg-owner';
+
+            div.innerHTML = `
+                <div class="sender-name">${data.name}</div>
+                <div class="msg-unit ${typeClass}">${data.text}</div>
+            `;
+            container.appendChild(div);
         });
-        msgDiv.scrollTop = msgDiv.scrollHeight; // 자동 스크롤
+        container.scrollTop = container.scrollHeight;
     });
 }
