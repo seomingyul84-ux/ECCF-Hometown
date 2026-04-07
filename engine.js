@@ -25,22 +25,34 @@ const MEMBERS = {
 
 let me = null;
 
+// 로그인 함수
 window.handleLogin = () => {
-    const name = document.getElementById('username').value;
-    const pw = document.getElementById('password').value;
+    const nameEl = document.getElementById('username');
+    const pwEl = document.getElementById('password');
+    if(!nameEl || !pwEl) return;
+
+    const name = nameEl.value;
+    const pw = pwEl.value;
 
     if (MEMBERS[name] && MEMBERS[name].pw === pw) {
         me = { name, ...MEMBERS[name] };
-        document.getElementById('login-box').style.display = 'none';
-        document.getElementById('chat-box').style.display = 'flex';
-        // 로그인 정보 표시
-        document.getElementById('user-info').innerText = `${name} (${me.role})`;
+        
+        // 에러 방지를 위한 안전한 UI 전환
+        const loginBox = document.getElementById('login-box');
+        const chatBox = document.getElementById('chat-box');
+        const userInfo = document.getElementById('user-info');
+
+        if (loginBox) loginBox.style.display = 'none';
+        if (chatBox) chatBox.style.display = 'flex';
+        if (userInfo) userInfo.innerText = `${name} (${me.role})`;
+        
         listenMessages();
     } else {
         alert("정보가 올바르지 않습니다.");
     }
 };
 
+// 메시지 전송 함수
 window.handleSend = () => {
     const input = document.getElementById('msg-input');
     if (!input || !input.value.trim() || !me) return;
@@ -54,26 +66,45 @@ window.handleSend = () => {
     input.value = '';
 };
 
+// 메시지 실시간 수신 및 UI 출력
 function listenMessages() {
     const container = document.getElementById('messages');
+    if (!container) return;
+
     onValue(ref(db, 'chat_logs'), (snap) => {
         container.innerHTML = '';
         snap.forEach((child) => {
             const data = child.val();
             const div = document.createElement('div');
+            
+            // 레이아웃 설정
             div.style.display = "flex";
             div.style.flexDirection = "column";
+            div.style.marginBottom = "15px"; // 메시지 간 간격 넓힘
+            
+            // 작성자 구분에 따른 정렬 및 스타일
+            const isMe = (data.name === me.name);
+            const isOwner = (data.role === 'OWNER');
             
             let typeClass = 'msg-user';
-            if (data.name === me.name) typeClass = 'msg-me';
-            else if (data.role === 'OWNER') typeClass = 'msg-owner';
+            if (isMe) typeClass = 'msg-me';
+            else if (isOwner) typeClass = 'msg-owner';
+
+            // 정렬 방향 결정
+            const align = isMe ? 'flex-end' : 'flex-start';
 
             div.innerHTML = `
-                <div style="font-size: 11px; color: #6b7280; margin: 2px 5px; align-self: ${data.name === me.name ? 'flex-end' : 'flex-start'}">${data.name}</div>
-                <div class="msg-unit ${typeClass}">${data.text}</div>
+                <div style="font-size: 12px; color: #6b7280; margin: 0 8px 4px 8px; align-self: ${align}">
+                    ${data.name} ${isOwner ? '<span style="color:#ef4444; font-size:10px;">★</span>' : ''}
+                </div>
+                <div class="msg-unit ${typeClass}" style="align-self: ${align}; word-break: break-all;">
+                    ${data.text}
+                </div>
             `;
             container.appendChild(div);
         });
-        container.scrollTop = container.scrollHeight;
+        
+        // 부드럽게 아래로 스크롤
+        container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
     });
 }
