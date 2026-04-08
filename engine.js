@@ -35,7 +35,7 @@ function formatTime(timestamp) {
 // 체스 퍼즐 가져오기
 async function fetchDailyPuzzle() {
     try {
-        const res = await fetch('https://lichess.org/api/puzzle/daily');
+        const res = await fetch('https://lichess.org/training/mateIn1');
         const data = await res.json();
         document.getElementById('puzzle-info').innerText = `Rating: ${data.puzzle.rating} (${data.game.perf.name})`;
     } catch (e) {
