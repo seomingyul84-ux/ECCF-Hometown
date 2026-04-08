@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-import { getDatabase, ref, push, onValue, serverTimestamp, query, limitToLast } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
+import { getDatabase, ref, push, onValue, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyDBxVUD8yJKxmt7I1p4eQgUeLeEMvYv-yo",
@@ -24,9 +24,25 @@ const MEMBERS = {
 };
 
 let me = null;
-let isFirstLoad = true; // 처음 접속 시 기존 메시지들에 대해 알림이 폭주하는 것 방지
 
-// 로그인 함수
+// 시간 표시 포맷 함수
+function formatTime(timestamp) {
+    if (!timestamp) return "";
+    const date = new Date(timestamp);
+    return date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: true });
+}
+
+// 체스 퍼즐 가져오기
+async function fetchDailyPuzzle() {
+    try {
+        const res = await fetch('https://lichess.org/api/puzzle/daily');
+        const data = await res.json();
+        document.getElementById('puzzle-info').innerText = `Rating: ${data.puzzle.rating} (${data.game.perf.name})`;
+    } catch (e) {
+        document.getElementById('puzzle-info').innerText = "퍼즐 로드 실패";
+    }
+}
+
 window.handleLogin = () => {
     const nameEl = document.getElementById('username');
     const pwEl = document.getElementById('password');
@@ -38,28 +54,20 @@ window.handleLogin = () => {
     if (MEMBERS[name] && MEMBERS[name].pw === pw) {
         me = { name, ...MEMBERS[name] };
         
-        // 알림 권한 요청 (백그라운드 알림의 핵심)
-        if ("Notification" in window) {
-            Notification.requestPermission().then(permission => {
-                if (permission === "granted") console.log("알림 권한 허용됨");
-            });
-        }
+        // 브라우저 알림 권한 요청
+        if (Notification.permission !== "granted") Notification.requestPermission();
 
-        const loginBox = document.getElementById('login-box');
-        const chatBox = document.getElementById('chat-box');
-        const userInfo = document.getElementById('user-info');
-
-        if (loginBox) loginBox.style.display = 'none';
-        if (chatBox) chatBox.style.display = 'flex';
-        if (userInfo) userInfo.innerText = `${name} (${me.role})`;
+        document.getElementById('login-box').style.display = 'none';
+        document.getElementById('chat-box').style.display = 'flex';
+        document.getElementById('user-info').innerText = `${name} (${me.role})`;
         
+        fetchDailyPuzzle(); // 퍼즐 로드
         listenMessages();
     } else {
         alert("정보가 올바르지 않습니다.");
     }
 };
 
-// 메시지 전송 함수
 window.handleSend = () => {
     const input = document.getElementById('msg-input');
     if (!input || !input.value.trim() || !me) return;
@@ -68,45 +76,19 @@ window.handleSend = () => {
         name: me.name,
         role: me.role,
         text: input.value,
-        time: serverTimestamp()
+        time: serverTimestamp() // 시간 기록
     });
     input.value = '';
 };
 
-// 브라우저 알림 실행 함수
-function triggerPushNotification(senderName, messageText) {
-    // 내가 보낸 메시지거나 페이지가 완전히 활성화된 상태면 알림을 띄우지 않음 (선택 사항)
-    if (senderName === me.name) return;
-
-    if (Notification.permission === "granted") {
-        const notification = new Notification(`ECCF 새 메시지: ${senderName}`, {
-            body: messageText,
-            icon: 'https://cdn-icons-png.flaticon.com/512/5968/5968756.png' // 채팅 아이콘 예시
-        });
-
-        notification.onclick = () => {
-            window.focus();
-            notification.close();
-        };
-    }
-}
-
-// 메시지 실시간 수신 및 UI 출력
 function listenMessages() {
     const container = document.getElementById('messages');
     if (!container) return;
 
-    const chatRef = ref(db, 'chat_logs');
-    
-    onValue(chatRef, (snap) => {
-        const dataList = [];
-        snap.forEach((child) => {
-            dataList.push(child.val());
-        });
-
-        // UI 렌더링
+    onValue(ref(db, 'chat_logs'), (snap) => {
         container.innerHTML = '';
-        dataList.forEach((data) => {
+        snap.forEach((child) => {
+            const data = child.val();
             const div = document.createElement('div');
             div.style.display = "flex";
             div.style.flexDirection = "column";
@@ -115,30 +97,24 @@ function listenMessages() {
             const isMe = (data.name === me.name);
             const isOwner = (data.role === 'OWNER');
             const align = isMe ? 'flex-end' : 'flex-start';
+            const timeStr = formatTime(data.time);
 
             let typeClass = isMe ? 'msg-me' : (isOwner ? 'msg-owner' : 'msg-user');
 
             div.innerHTML = `
-                <div style="font-size: 12px; color: #6b7280; margin: 0 8px 4px 8px; align-self: ${align}">
-                    ${data.name} ${isOwner ? '<span style="color:#ef4444; font-size:10px;">★</span>' : ''}
-                </div>
-                <div class="msg-unit ${typeClass}" style="align-self: ${align}; word-break: break-all;">
-                    ${data.text}
+                <div style="font-size: 11px; color: #6b7280; margin: 0 8px 4px 8px; align-self: ${align}">${data.name} ${isOwner ? '★' : ''}</div>
+                <div style="display: flex; align-items: flex-end; gap: 5px; flex-direction: ${isMe ? 'row-reverse' : 'row'}; align-self: ${align}">
+                    <div class="msg-unit ${typeClass}" style="word-break: break-all;">${data.text}</div>
+                    <span style="font-size: 10px; color: #9ca3af; white-space: nowrap; margin-bottom: 2px;">${timeStr}</span>
                 </div>
             `;
             container.appendChild(div);
-        });
 
-        // 새 메시지 알림 로직
-        if (!isFirstLoad && dataList.length > 0) {
-            const lastMsg = dataList[dataList.length - 1];
-            // 브라우저 탭이 백그라운드에 있거나 최소화되었을 때 알림 트리거
-            if (document.hidden) {
-                triggerPushNotification(lastMsg.name, lastMsg.text);
+            // 백그라운드 알림 (화면이 가려졌을 때만)
+            if (document.hidden && !isMe) {
+                new Notification(`ECCF: ${data.name}`, { body: data.text });
             }
-        }
-        
-        isFirstLoad = false; // 첫 로딩 이후부터 알림 활성화
+        });
         container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
     });
 }
