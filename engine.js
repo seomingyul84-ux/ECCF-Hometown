@@ -25,17 +25,15 @@ const MEMBERS = {
 
 let me = null;
 
-// 시간 표시 포맷 함수
 function formatTime(timestamp) {
     if (!timestamp) return "";
     const date = new Date(timestamp);
     return date.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', hour12: true });
 }
 
-// 체스 퍼즐 가져오기
 async function fetchDailyPuzzle() {
     try {
-        const res = await fetch('https://lichess.org/training/mateIn1');
+        const res = await fetch('https://lichess.org/api/puzzle/daily');
         const data = await res.json();
         document.getElementById('puzzle-info').innerText = `Rating: ${data.puzzle.rating} (${data.game.perf.name})`;
     } catch (e) {
@@ -54,14 +52,13 @@ window.handleLogin = () => {
     if (MEMBERS[name] && MEMBERS[name].pw === pw) {
         me = { name, ...MEMBERS[name] };
         
-        // 브라우저 알림 권한 요청
         if (Notification.permission !== "granted") Notification.requestPermission();
 
         document.getElementById('login-box').style.display = 'none';
         document.getElementById('chat-box').style.display = 'flex';
         document.getElementById('user-info').innerText = `${name} (${me.role})`;
         
-        fetchDailyPuzzle(); // 퍼즐 로드
+        fetchDailyPuzzle();
         listenMessages();
     } else {
         alert("정보가 올바르지 않습니다.");
@@ -76,7 +73,7 @@ window.handleSend = () => {
         name: me.name,
         role: me.role,
         text: input.value,
-        time: serverTimestamp() // 시간 기록
+        time: serverTimestamp()
     });
     input.value = '';
 };
@@ -110,7 +107,6 @@ function listenMessages() {
             `;
             container.appendChild(div);
 
-            // 백그라운드 알림 (화면이 가려졌을 때만)
             if (document.hidden && !isMe) {
                 new Notification(`ECCF: ${data.name}`, { body: data.text });
             }
