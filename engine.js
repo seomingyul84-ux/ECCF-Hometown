@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-import { getDatabase, ref, push, onValue, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
+import { getDatabase, ref, push, onValue, set, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyDBxVUD8yJKxmt7I1p4eQgUeLeEMvYv-yo",
@@ -24,8 +24,41 @@ const MEMBERS = {
 };
 
 let me = null;
+let board = null;
+let game = new Chess();
 
-// 시간 표시 포맷 함수 (오전/오후 00:00)
+// 체스판 초기화 및 실시간 동기화 함수
+function initChessGame() {
+    const config = {
+        draggable: true,
+        position: 'start',
+        onDrop: (source, target) => {
+            const move = game.move({ from: source, to: target, promotion: 'q' });
+            if (move === null) return 'snapback';
+            // 기물을 놓은 후 상태를 Firebase에 업로드
+            set(ref(db, 'chess_state'), game.fen());
+        }
+    };
+    board = Chessboard('board', config);
+
+    // Firebase에서 체스 상태 감시
+    onValue(ref(db, 'chess_state'), (snap) => {
+        const fen = snap.val();
+        if (fen && fen !== game.fen()) {
+            game.load(fen);
+            board.position(fen);
+        }
+    });
+}
+
+// 게임 리셋 함수
+window.resetChessGame = () => {
+    if (confirm("체스판을 초기화하시겠습니까?")) {
+        game.reset();
+        set(ref(db, 'chess_state'), game.fen());
+    }
+};
+
 function formatTime(timestamp) {
     if (!timestamp) return "";
     const date = new Date(timestamp);
@@ -42,14 +75,13 @@ window.handleLogin = () => {
 
     if (MEMBERS[name] && MEMBERS[name].pw === pw) {
         me = { name, ...MEMBERS[name] };
-        
-        // 브라우저 알림 권한 요청
         if (Notification.permission !== "granted") Notification.requestPermission();
 
         document.getElementById('login-box').style.display = 'none';
         document.getElementById('chat-box').style.display = 'flex';
         document.getElementById('user-info').innerText = `${name} (${me.role})`;
         
+        initChessGame(); // 체스 초기화
         listenMessages();
     } else {
         alert("정보가 올바르지 않습니다.");
@@ -64,7 +96,7 @@ window.handleSend = () => {
         name: me.name,
         role: me.role,
         text: input.value,
-        time: serverTimestamp() // Firebase 서버 시간 기록
+        time: serverTimestamp()
     });
     input.value = '';
 };
@@ -98,7 +130,6 @@ function listenMessages() {
             `;
             container.appendChild(div);
 
-            // 브라우저 알림 (탭이 비활성화 상태일 때만)
             if (document.hidden && !isMe) {
                 new Notification(`ECCF 새 메시지: ${data.name}`, { body: data.text });
             }
