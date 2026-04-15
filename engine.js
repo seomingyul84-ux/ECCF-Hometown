@@ -25,21 +25,20 @@ const MEMBERS = {
 
 let me = null;
 
-// [수정된 부분] fetch 없이 바로 Lichess 보드를 iframe으로 삽입
+// [수정 완료] 분석용이 아닌 '실전 대국'용 공식 임베드 주소 적용
 window.startAIChess = () => {
     const container = document.getElementById('chess-container');
     
-    // Lichess의 분석판/연습용 보드를 임베드합니다. 
-    // 정식 챌린지 API가 막힐 때는 이 방식이 가장 안전합니다.
+    // play/embed 경로를 사용하면 분석기가 아닌 실제 AI 대국 보드가 뜹니다.
     container.innerHTML = `
-        <iframe src="https://lichess.org/embed/export/fen/rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR?theme=wikipedia&bg=light" 
+        <iframe src="https://lichess.org/play/embed?theme=auto&bg=auto" 
                 width="100%" 
                 height="100%" 
                 frameborder="0" 
                 style="border-radius: 8px; background: white;">
         </iframe>`;
     
-    console.log("체스판 로드 시도");
+    console.log("실전 AI 대국 로드 시도");
 };
 
 function formatTime(timestamp) {
