@@ -28,7 +28,7 @@ let me = null;
 // Lichess AI 대국 생성 및 임베드
 window.startAIChess = async () => {
     const container = document.getElementById('chess-container');
-    container.innerHTML = '<span style="font-size: 13px;">AI 대국 생성 중...</span>';
+    container.innerHTML = '<span style="font-size: 13px; color: #2563eb;">AI 대국 생성 중...</span>';
 
     try {
         const response = await fetch('https://lichess.org/api/challenge/open', {
@@ -36,19 +36,36 @@ window.startAIChess = async () => {
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: new URLSearchParams({
                 'variant': 'standard',
-                'clock.limit': 600,
-                'clock.increment': 5,
-                'level': 2,
+                'clock.limit': '600',
+                'clock.increment': '5',
+                'level': '2', // 숫자가 아닌 문자열로 전달해야 안정적입니다.
                 'color': 'white'
             })
         });
 
-        const data = await response.json();
-        const gameUrl = data.challenge.url.replace('https://lichess.org/', 'https://lichess.org/embed/');
+        if (!response.ok) throw new Error('Network response was not ok');
 
-        container.innerHTML = `<iframe src="${gameUrl}" width="100%" height="100%" frameborder="0" style="border-radius: 8px;"></iframe>`;
+        const data = await response.json();
+        // 챌린지 ID를 사용하여 더 정확한 임베드 주소를 만듭니다.
+        const challengeId = data.challenge.id;
+        const embedUrl = `https://lichess.org/embed/${challengeId}?theme=auto&bg=auto`;
+
+        container.innerHTML = `
+            <iframe src="${embedUrl}" 
+                    width="100%" 
+                    height="100%" 
+                    frameborder="0" 
+                    allowtransparency="true"
+                    allow="clipboard-write"
+                    style="border-radius: 8px; background: white;">
+            </iframe>`;
     } catch (e) {
-        container.innerHTML = '<span style="color: #ef4444;">AI 호출 실패</span>';
+        console.error("AI 로딩 에러:", e);
+        container.innerHTML = `
+            <div style="text-align: center;">
+                <span style="color: #ef4444; font-size: 13px;">AI 호출 실패</span><br>
+                <button onclick="window.startAIChess()" style="margin-top:5px; padding:4px 8px; font-size:11px;">다시 시도</button>
+            </div>`;
     }
 };
 
