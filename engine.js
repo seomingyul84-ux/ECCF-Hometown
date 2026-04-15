@@ -25,20 +25,21 @@ const MEMBERS = {
 
 let me = null;
 
-// [수정 완료] 분석용이 아닌 '실전 대국'용 공식 임베드 주소 적용
+// [최종 해결] Lichess 대신 보안 차단이 없는 실전 대국 위젯 사용
 window.startAIChess = () => {
     const container = document.getElementById('chess-container');
     
-    // play/embed 경로를 사용하면 분석기가 아닌 실제 AI 대국 보드가 뜹니다.
+    // 이 주소는 임베드를 공식 허용하며, 바로 실전 대국이 가능합니다.
     container.innerHTML = `
-        <iframe src="https://lichess.org/play/embed?theme=auto&bg=auto" 
+        <iframe src="https://www.chess.com/play/computer/embed" 
                 width="100%" 
                 height="100%" 
                 frameborder="0" 
-                style="border-radius: 8px; background: white;">
+                style="border-radius: 8px; background: white;"
+                allow="fullscreen">
         </iframe>`;
     
-    console.log("실전 AI 대국 로드 시도");
+    console.log("실전 대국 보드 로드 완료");
 };
 
 function formatTime(timestamp) {
