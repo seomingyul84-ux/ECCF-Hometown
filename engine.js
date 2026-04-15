@@ -119,3 +119,4 @@ function listenMessages() {
         container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
     });
 }
+}
