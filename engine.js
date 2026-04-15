@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-import { getDatabase, ref, push, onValue, set, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
+import { getDatabase, ref, push, onValue, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyDBxVUD8yJKxmt7I1p4eQgUeLeEMvYv-yo",
@@ -24,38 +24,31 @@ const MEMBERS = {
 };
 
 let me = null;
-let board = null;
-let game = new Chess();
 
-// 체스판 초기화 및 실시간 동기화 함수
-function initChessGame() {
-    const config = {
-        draggable: true,
-        position: 'start',
-        onDrop: (source, target) => {
-            const move = game.move({ from: source, to: target, promotion: 'q' });
-            if (move === null) return 'snapback';
-            // 기물을 놓은 후 상태를 Firebase에 업로드
-            set(ref(db, 'chess_state'), game.fen());
-        }
-    };
-    board = Chessboard('board', config);
+// Lichess AI 대국 생성 및 임베드
+window.startAIChess = async () => {
+    const container = document.getElementById('chess-container');
+    container.innerHTML = '<span style="font-size: 13px;">AI 대국 생성 중...</span>';
 
-    // Firebase에서 체스 상태 감시
-    onValue(ref(db, 'chess_state'), (snap) => {
-        const fen = snap.val();
-        if (fen && fen !== game.fen()) {
-            game.load(fen);
-            board.position(fen);
-        }
-    });
-}
+    try {
+        const response = await fetch('https://lichess.org/api/challenge/open', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+                'variant': 'standard',
+                'clock.limit': 600,
+                'clock.increment': 5,
+                'level': 2,
+                'color': 'white'
+            })
+        });
 
-// 게임 리셋 함수
-window.resetChessGame = () => {
-    if (confirm("체스판을 초기화하시겠습니까?")) {
-        game.reset();
-        set(ref(db, 'chess_state'), game.fen());
+        const data = await response.json();
+        const gameUrl = data.challenge.url.replace('https://lichess.org/', 'https://lichess.org/embed/');
+
+        container.innerHTML = `<iframe src="${gameUrl}" width="100%" height="100%" frameborder="0" style="border-radius: 8px;"></iframe>`;
+    } catch (e) {
+        container.innerHTML = '<span style="color: #ef4444;">AI 호출 실패</span>';
     }
 };
 
@@ -81,7 +74,6 @@ window.handleLogin = () => {
         document.getElementById('chat-box').style.display = 'flex';
         document.getElementById('user-info').innerText = `${name} (${me.role})`;
         
-        initChessGame(); // 체스 초기화
         listenMessages();
     } else {
         alert("정보가 올바르지 않습니다.");
