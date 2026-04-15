@@ -25,11 +25,11 @@ const MEMBERS = {
 
 let me = null;
 
-// [최종 해결] Lichess 대신 보안 차단이 없는 실전 대국 위젯 사용
+// 실전 대국용 위젯 로드 (보안 차단 없음)
 window.startAIChess = () => {
     const container = document.getElementById('chess-container');
-    
-    // 이 주소는 임베드를 공식 허용하며, 바로 실전 대국이 가능합니다.
+    if (!container) return;
+
     container.innerHTML = `
         <iframe src="https://www.chess.com/play/computer/embed" 
                 width="100%" 
@@ -118,5 +118,4 @@ function listenMessages() {
         });
         container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
     });
-}
 }
