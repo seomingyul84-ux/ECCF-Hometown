@@ -25,48 +25,21 @@ const MEMBERS = {
 
 let me = null;
 
-// Lichess AI 대국 생성 및 임베드
-window.startAIChess = async () => {
+// [수정된 부분] fetch 없이 바로 Lichess 보드를 iframe으로 삽입
+window.startAIChess = () => {
     const container = document.getElementById('chess-container');
-    container.innerHTML = '<span style="font-size: 13px; color: #2563eb;">AI 대국 생성 중...</span>';
-
-    try {
-        const response = await fetch('https://lichess.org/api/challenge/open', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: new URLSearchParams({
-                'variant': 'standard',
-                'clock.limit': '600',
-                'clock.increment': '5',
-                'level': '2', // 숫자가 아닌 문자열로 전달해야 안정적입니다.
-                'color': 'white'
-            })
-        });
-
-        if (!response.ok) throw new Error('Network response was not ok');
-
-        const data = await response.json();
-        // 챌린지 ID를 사용하여 더 정확한 임베드 주소를 만듭니다.
-        const challengeId = data.challenge.id;
-        const embedUrl = `https://lichess.org/embed/${challengeId}?theme=auto&bg=auto`;
-
-        container.innerHTML = `
-            <iframe src="${embedUrl}" 
-                    width="100%" 
-                    height="100%" 
-                    frameborder="0" 
-                    allowtransparency="true"
-                    allow="clipboard-write"
-                    style="border-radius: 8px; background: white;">
-            </iframe>`;
-    } catch (e) {
-        console.error("AI 로딩 에러:", e);
-        container.innerHTML = `
-            <div style="text-align: center;">
-                <span style="color: #ef4444; font-size: 13px;">AI 호출 실패</span><br>
-                <button onclick="window.startAIChess()" style="margin-top:5px; padding:4px 8px; font-size:11px;">다시 시도</button>
-            </div>`;
-    }
+    
+    // Lichess의 분석판/연습용 보드를 임베드합니다. 
+    // 정식 챌린지 API가 막힐 때는 이 방식이 가장 안전합니다.
+    container.innerHTML = `
+        <iframe src="https://lichess.org/embed/export/fen/rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR?theme=wikipedia&bg=light" 
+                width="100%" 
+                height="100%" 
+                frameborder="0" 
+                style="border-radius: 8px; background: white;">
+        </iframe>`;
+    
+    console.log("체스판 로드 시도");
 };
 
 function formatTime(timestamp) {
