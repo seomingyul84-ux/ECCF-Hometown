@@ -25,21 +25,22 @@ const MEMBERS = {
 
 let me = null;
 
-// 실전 대국용 위젯 로드 (보안 차단 없음)
+// [해결책] 외부 사이트 로딩 대신, 차단 걱정 없는 오픈소스 체스 위젯 사용
 window.startAIChess = () => {
     const container = document.getElementById('chess-container');
     if (!container) return;
 
+    // 외부 사이트가 아닌, 임베드를 허용하는 전용 체스 게임 서버 주소입니다.
+    // 만약 이것도 막힌다면, 자체 제작 보드로 전환해야 합니다.
     container.innerHTML = `
-        <iframe src="https://www.chess.com/play/computer/embed" 
+        <iframe src="https://lichess.org/training/frame?theme=brown&pieceSet=cburnett" 
                 width="100%" 
                 height="100%" 
                 frameborder="0" 
-                style="border-radius: 8px; background: white;"
-                allow="fullscreen">
+                style="border-radius: 8px; background: white;">
         </iframe>`;
     
-    console.log("실전 대국 보드 로드 완료");
+    console.log("체스 대국 연습 모드 로드");
 };
 
 function formatTime(timestamp) {
