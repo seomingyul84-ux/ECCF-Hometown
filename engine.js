@@ -25,13 +25,12 @@ const MEMBERS = {
 
 let me = null;
 
-// [최종 해결책] 보안 차단이 없는 전용 체스 대국 서버 위젯을 임베드합니다.
+// [해결책] 차단 걱정 없는 전용 체스 대국 위젯 사용
 window.startAIChess = () => {
     const container = document.getElementById('chess-container');
     if (!container) return;
 
-    // 이 서비스는 외부 사이트 임베드를 차단하지 않아 github.io에서도 잘 작동합니다.
-    // 접속하자마자 바로 AI와 대국을 시작할 수 있는 환경입니다.
+    // 이 위젯은 임베드를 공식적으로 허용하며, 바로 실전 대결이 가능합니다.
     container.innerHTML = `
         <iframe src="https://www.nextchessmove.com/board-embed" 
                 width="100%" 
