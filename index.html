@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ECCF 라이브 채팅 & 체스</title>
+    <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { 
@@ -34,9 +35,9 @@
         
         #chat-box { display: none; width: 100%; height: 100%; flex-direction: row; }
         
-        /* 체스 영역 스타일 수정 */
         #chess-side { width: 450px; background: #f8fafc; border-right: 1px solid #eee; display: flex; flex-direction: column; align-items: center; padding: 15px; }
-        #chess-container { width: 100%; height: 420px; background: #e2e8f0; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; margin-bottom: 15px; }
+        #chess-container { width: 100%; min-height: 400px; background: #e2e8f0; border-radius: 8px; padding: 10px; display: flex; align-items: center; justify-content: center; margin-bottom: 15px; }
+        #myBoard { width: 100%; }
 
         #chat-side { flex: 1; display: flex; flex-direction: column; height: 100%; }
         header { background: #ffffff; padding: 15px 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
@@ -49,6 +50,9 @@
         .input-area { padding: 15px; display: flex; gap: 10px; background: white; border-top: 1px solid #eee; }
         #msg-input { flex: 1; }
     </style>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
 </head>
 <body>
 
@@ -69,7 +73,7 @@
         <div id="chess-side">
             <div style="font-weight: bold; margin-bottom: 10px; color: #1e293b;">VS Stockfish Level 2</div>
             <div id="chess-container">
-                <span style="color: #64748b; font-size: 13px;">대결 버튼을 눌러주세요</span>
+                <div id="myBoard"></div>
             </div>
             <button onclick="window.startAIChess()" style="background: #059669; font-size: 14px; width: 100%;">AI와 게임 시작</button>
         </div>
