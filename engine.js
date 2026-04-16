@@ -24,38 +24,62 @@ const MEMBERS = {
 };
 
 let me = null;
+let board = null;
+let game = new Chess();
 
-// [핵심] Lichess 클라우드 엔진 API 호출 함수
-window.startAIChess = async () => {
-    const container = document.getElementById('chess-container');
-    container.innerHTML = '<div id="board" style="width: 100%; aspect-ratio: 1/1; background: #dee2e6; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #495057;">API 연결 중...</div>';
-
+// [Lichess API 연동] Stockfish의 수 가져오기
+async function makeAIMove() {
+    const fen = game.fen();
     try {
-        // Lichess Cloud Eval API 사용 (FEN을 보내면 Stockfish의 최선의 수를 알려줌)
-        // 현재 보드 상황(FEN)을 보내면 엔진이 분석한 데이터를 가져옵니다.
-        const currentFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-        const response = await fetch(`https://lichess.org/api/cloud-eval?fen=${currentFEN}`);
-        
-        if (!response.ok) throw new Error("API 응답 없음");
-        
+        const response = await fetch(`https://lichess.org/api/cloud-eval?fen=${fen}`);
         const data = await response.json();
-        const bestMove = data.pvs[0].moves.split(' ')[0]; // 엔진이 추천하는 첫 번째 수
-
-        container.innerHTML = `
-            <div style="padding: 15px; text-align: center; background: white; border-radius: 8px;">
-                <b style="color: #2563eb;">Lichess 엔진 연결 성공</b><br>
-                <p style="font-size: 13px; margin-top: 10px;">현재 추천 수: <span style="color: #ef4444; font-weight: bold;">${bestMove}</span></p>
-                <div style="font-size: 11px; color: #64748b;">(이 방식은 API로 데이터만 받아오므로<br>보드 UI 라이브러리가 추가로 필요합니다.)</div>
-            </div>`;
-            
+        
+        if (data && data.pvs && data.pvs[0]) {
+            const bestMove = data.pvs[0].moves.split(' ')[0]; // 예: "e7e5"
+            game.move(bestMove, { sloppy: true });
+            board.position(game.fen());
+            checkGameOver();
+        }
     } catch (e) {
-        console.error("엔진 호출 에러:", e);
-        container.innerHTML = '<span style="color: #ef4444;">API 호출 실패 (네트워크 확인)</span>';
+        console.error("Lichess API 연동 실패:", e);
     }
+}
+
+function checkGameOver() {
+    if (game.game_over()) {
+        alert("게임 종료!");
+    }
+}
+
+// [체스 보드 초기화 및 시작]
+window.startAIChess = () => {
+    game = new Chess();
+    
+    const onDrop = (source, target) => {
+        const move = game.move({
+            from: source,
+            to: target,
+            promotion: 'q' // 폰이 끝까지 가면 퀸으로 승단
+        });
+
+        if (move === null) return 'snapback';
+
+        // 유저가 백(White)으로 수를 둔 후 AI 차례
+        window.setTimeout(makeAIMove, 500);
+    };
+
+    const config = {
+        draggable: true,
+        position: 'start',
+        orientation: 'white',
+        onDrop: onDrop
+    };
+
+    board = Chessboard('myBoard', config);
+    console.log("로컬 보드 & Lichess API 준비 완료");
 };
 
-// --- 아래는 기존 채팅 관련 코드 (동일함) ---
-
+// [채팅 관련 로직]
 function formatTime(timestamp) {
     if (!timestamp) return "";
     const date = new Date(timestamp);
