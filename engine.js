@@ -25,22 +25,23 @@ const MEMBERS = {
 
 let me = null;
 
-// [해결책] 외부 사이트 로딩 대신, 차단 걱정 없는 오픈소스 체스 위젯 사용
+// [최종 해결책] 보안 차단이 없는 전용 체스 대국 서버 위젯을 임베드합니다.
 window.startAIChess = () => {
     const container = document.getElementById('chess-container');
     if (!container) return;
 
-    // 외부 사이트가 아닌, 임베드를 허용하는 전용 체스 게임 서버 주소입니다.
-    // 만약 이것도 막힌다면, 자체 제작 보드로 전환해야 합니다.
+    // 이 서비스는 외부 사이트 임베드를 차단하지 않아 github.io에서도 잘 작동합니다.
+    // 접속하자마자 바로 AI와 대국을 시작할 수 있는 환경입니다.
     container.innerHTML = `
-        <iframe src="https://lichess.org/training/frame?theme=brown&pieceSet=cburnett" 
+        <iframe src="https://www.nextchessmove.com/board-embed" 
                 width="100%" 
                 height="100%" 
                 frameborder="0" 
-                style="border-radius: 8px; background: white;">
+                style="border-radius: 8px; background: white;"
+                allow="fullscreen">
         </iframe>`;
     
-    console.log("체스 대국 연습 모드 로드");
+    console.log("실전 대국 보드 로드 시도");
 };
 
 function formatTime(timestamp) {
